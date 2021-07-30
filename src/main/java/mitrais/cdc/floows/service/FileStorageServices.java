@@ -2,7 +2,9 @@ package mitrais.cdc.floows.service;
 
 import mitrais.cdc.floows.exceptions.FileStorageException;
 import mitrais.cdc.floows.exceptions.MyFileNotFoundException;
+import mitrais.cdc.floows.model.FileInfo;
 import mitrais.cdc.floows.properties.FileStorageProperties;
+import mitrais.cdc.floows.repository.FileInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -24,6 +26,8 @@ import java.nio.file.StandardCopyOption;
 @Service
 public class FileStorageServices {
     private final Path fileStorageLocation;
+    @Autowired
+    private FileInfoRepository fileInfoRepository;
 
     @Autowired
     public FileStorageServices(FileStorageProperties fileStorageProperties){
@@ -45,8 +49,11 @@ public class FileStorageServices {
                 throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
             }
 
+            FileInfo fileInfo = new FileInfo(fileName,fileStorageLocation.toFile().getPath());
+
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            fileInfoRepository.save(fileInfo);
 
             return fileName;
         } catch (IOException ex) {
@@ -66,5 +73,13 @@ public class FileStorageServices {
         } catch (MalformedURLException ex) {
             throw new MyFileNotFoundException("File not found " + fileName, ex);
         }
+    }
+
+    public FileInfoRepository getFileInfoRepository() {
+        return fileInfoRepository;
+    }
+
+    public void setFileInfoRepository(FileInfoRepository fileInfoRepository) {
+        this.fileInfoRepository = fileInfoRepository;
     }
 }
